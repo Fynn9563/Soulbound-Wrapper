@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Electron build output
+dist/
+build/
+out/
+Starbound-win32-*/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.pid.lock
+
+# Coverage directories
+coverage/
+.nyc_output/
+
+# Miscellaneous build files
+lib-cov/
+.grunt/
+bower_components/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Environment variables
+.env
+.env.test
+
+# Temporary files
+tmp/
+temp/
+
+# Electron & packaging
+app.asar
+electron-builder.json
