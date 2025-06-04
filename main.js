@@ -2,9 +2,9 @@
 const { app, BrowserWindow, globalShortcut, Menu, ipcMain } = require('electron');
 const path = require('path');
 
-let win;
-let exitWindow = null;
-let quitMenu;
+let win;               // Main game window
+let exitWindow = null; // Custom “pixel” exit dialog window
+let quitMenu;          // Right-click context menu for “Quit”
 let isQuitDialogOpen = false;
 
 // All Chromium flags for maximum GPU performance + no unnecessary subsystems
@@ -27,13 +27,13 @@ const PERFORMANCE_FLAGS = [
   // ----- Disable unused subsystems -----
   'disable-backgrounding-occluded-windows',
   'disable-breakpad',
-  `disable-features=AudioServiceOutOfProcess,MouseSubsampling,SubpixelFontScaling,SharedImageCacheOnDisk,SkiaVulkan`,
+  'disable-features=AudioServiceOutOfProcess,MouseSubsampling,SubpixelFontScaling,SharedImageCacheOnDisk,SkiaVulkan',
 
   // (Safe) asynchronous DNS
   'enable-async-dns'
 ];
 
-// Apply everything before app.whenReady()
+// Apply all Chromium switches before app.whenReady() fires
 PERFORMANCE_FLAGS.forEach(flag => {
   const [key, value] = flag.split('=');
   if (value !== undefined) {
@@ -44,10 +44,11 @@ PERFORMANCE_FLAGS.forEach(flag => {
 });
 
 function createWindow() {
+  console.log('[main.js] createWindow() called');
   win = new BrowserWindow({
     fullscreen: true,
     frame: false,
-    show: false,
+    show: false,            // wait for ready-to-show
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -62,13 +63,19 @@ function createWindow() {
   // Enforce 16:9 so the game’s native resolution isn’t stretched
   win.setAspectRatio(16 / 9);
 
-  win.once('ready-to-show', () => win.show());
+  win.once('ready-to-show', () => {
+    console.log('[main.js] BrowserWindow is ready-to-show, calling win.show()');
+    win.show();
+  });
 
+  // Load the browser game
+  console.log('[main.js] Loading URL: https://play.soulbound.game/');
   win.loadURL('https://play.soulbound.game/');
   win.setMenuBarVisibility(false);
 
   win.webContents.on('did-finish-load', () => {
-    // 1) Make sure we’re at normal zoom
+    console.log('[main.js] did-finish-load triggered');
+    // 1) Ensure zoom factor = 1
     win.webContents.setZoomFactor(1);
 
     // 2) Preserve pixel-art scaling (nearest-neighbor)
@@ -79,21 +86,30 @@ function createWindow() {
     `);
   });
 
-  // Right-click → “Quit” menu
-  quitMenu = Menu.buildFromTemplate([{
-    label: 'Quit',
-    click: confirmQuit
-  }]);
+  // Right-click → “Quit” context menu
+  quitMenu = Menu.buildFromTemplate([
+    {
+      label: 'Quit',
+      click: confirmQuit
+    }
+  ]);
   win.webContents.on('context-menu', () => {
     quitMenu.popup({ window: win });
   });
 }
 
 function confirmQuit() {
-  if (isQuitDialogOpen) return;
-  if (exitWindow && !exitWindow.isDestroyed()) return;
-  isQuitDialogOpen = true;
+  if (isQuitDialogOpen) {
+    console.log('[main.js] confirmQuit() called, but isQuitDialogOpen=true → returning');
+    return;
+  }
+  if (exitWindow && !exitWindow.isDestroyed()) {
+    console.log('[main.js] confirmQuit() called, but exitWindow already exists → returning');
+    return;
+  }
 
+  console.log('[main.js] Opening quit-confirm dialog');
+  isQuitDialogOpen = true;
   exitWindow = new BrowserWindow({
     parent: win,
     modal: true,
@@ -111,46 +127,67 @@ function confirmQuit() {
   });
 
   exitWindow.loadFile(path.join(__dirname, 'exit.html'));
-  exitWindow.once('ready-to-show', () => exitWindow.show());
+  exitWindow.once('ready-to-show', () => {
+    console.log('[main.js] exitWindow ready, showing dialog');
+    exitWindow.show();
+  });
   exitWindow.on('closed', () => {
+    console.log('[main.js] exitWindow closed');
     isQuitDialogOpen = false;
     exitWindow = null;
   });
 }
 
 ipcMain.on('exit-dialog-selection', (e, action) => {
+  console.log('[main.js] Received exit-dialog-selection:', action);
   if (action === 'cancel' && exitWindow && !exitWindow.isDestroyed()) {
     exitWindow.close();
   } else if (action === 'quit') {
+    console.log('[main.js] User chose QUIT → app.quit()');
     app.quit();
   }
 });
 
 function registerShortcuts() {
+  console.log('[main.js] registerShortcuts()');
   globalShortcut.register('Escape', confirmQuit);
 }
 function unregisterShortcuts() {
+  console.log('[main.js] unregisterShortcuts()');
   globalShortcut.unregisterAll();
 }
 
-if (require.main === module) {
-  app.whenReady().then(() => {
+function start() {
+  // Return the promise so tests (or anything else) can await it
+  return app.whenReady().then(() => {
+    console.log('[main.js] app.whenReady() fulfilled');
     createWindow();
     registerShortcuts();
+
     app.on('activate', () => {
+      console.log('[main.js] app.activate event');
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
         registerShortcuts();
       }
     });
-  });
-
-  app.on('will-quit', unregisterShortcuts);
-  app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
+  }).then(() => {
+    app.on('will-quit', unregisterShortcuts);
+    app.on('window-all-closed', () => {
+      console.log('[main.js] app.window-all-closed');
+      if (process.platform !== 'darwin') {
+        console.log('[main.js] app.quit()');
+        app.quit();
+      }
+    });
   });
 }
 
+// Always call start() when Electron loads this file
+start();
+
+// Export PERFORMANCE_FLAGS and start() for testing
 module.exports = {
-  PERFORMANCE_FLAGS
+  PERFORMANCE_FLAGS,
+  start
 };
