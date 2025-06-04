@@ -13,4 +13,3 @@ This wrapper simply launches the web version in a fullscreen window so it feels 
 ## License
 
 This project is released under the MIT License. See [LICENSE](LICENSE) for details.
-
