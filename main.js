@@ -133,16 +133,24 @@ function unregisterShortcuts() {
   globalShortcut.unregisterAll();
 }
 
-app.whenReady().then(() => {
-  createWindow();
-  registerShortcuts();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-      registerShortcuts();
-    }
+if (require.main === module) {
+  app.whenReady().then(() => {
+    createWindow();
+    registerShortcuts();
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+        registerShortcuts();
+      }
+    });
   });
-});
 
-app.on('will-quit', unregisterShortcuts);
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+  app.on('will-quit', unregisterShortcuts);
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}
+
+module.exports = {
+  PERFORMANCE_FLAGS
+};
