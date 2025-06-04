@@ -1,0 +1,16 @@
+{
+  "name": "starbound",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:prod": "cross-env NODE_ENV=production electron .",
+    "package:win": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=win32 --arch=x64 --icon=icon.ico --overwrite",
+    "package:mac": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=darwin --arch=x64 --icon=icon.icns --overwrite"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^36.4.0",
+    "electron-packager": "^16.0.0"
+  }
+}

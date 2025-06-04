@@ -5,7 +5,7 @@ node_modules/
 dist/
 build/
 out/
-Starbound-win32-*/
+Soulbound-win32-x64*/
 
 # Logs
 npm-debug.log*
