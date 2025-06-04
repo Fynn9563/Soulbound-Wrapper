@@ -89,11 +89,18 @@ jobs:
         run: |
           npm run package:${{ matrix.script }}
 
-      - name: Zip package
+      - name: Zip package (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $folder = "Soulbound-${{ matrix.platform }}-x64"
+          powershell Compress-Archive -Path "$folder\*" -DestinationPath "release-${{ matrix.artifact }}.zip"
+
+      - name: Zip package (Linux/macOS)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
-          folder=Soulbound-${{ matrix.platform }}-x64
-          zip -r release-${{ matrix.artifact }}.zip "$folder"
+          folder="Soulbound-${{ matrix.platform }}-x64"
+          zip -r "release-${{ matrix.artifact }}.zip" "$folder"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
