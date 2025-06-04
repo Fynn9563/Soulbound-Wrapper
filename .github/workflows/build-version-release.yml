@@ -41,7 +41,7 @@ jobs:
         id: bump
         run: |
           npm version patch -m "chore(release): %s [skip ci]"
-          echo "new_version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+          echo new_version=$(node -p "require('./package.json').version") >> $GITHUB_OUTPUT
 
       - name: Show bumped version
         run: |
@@ -90,9 +90,7 @@ jobs:
       - name: Run tests
         run: npm test --if-present
 
-      - name: Package application (${{
-            matrix.platform
-          }})
+      - name: Package application ( ${{ matrix.platform }} )
         run: npm run package:${{ matrix.script }}
 
       - name: Zip package (Windows)
@@ -126,8 +124,7 @@ jobs:
           path: artifacts
 
       - name: Show consumed version
-        run: |
-          echo "needs.version.outputs.new_version = ${{ needs.version.outputs.new_version }}"
+        run: echo "needs.version.outputs.new_version = ${{ needs.version.outputs.new_version }}"
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
