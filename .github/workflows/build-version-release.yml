@@ -86,8 +86,7 @@ jobs:
         run: npm test --if-present
 
       - name: Package application ( ${{ matrix.platform }} )
-        run: |
-          npm run package:${{ matrix.script }}
+        run: npm run package:${{ matrix.script }}
 
       - name: Zip package (Windows)
         if: runner.os == 'Windows'
@@ -109,7 +108,9 @@ jobs:
           path: release-${{ matrix.artifact }}.zip
 
   release:
-    needs: build
+    needs:
+      - version
+      - build
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
@@ -117,11 +118,11 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: v${{ needs.version.outputs.new_version }}
-          name: v${{ needs.version.outputs.new_version }}
+          name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: artifacts/**/*.zip
           draft: false
           prerelease: false
