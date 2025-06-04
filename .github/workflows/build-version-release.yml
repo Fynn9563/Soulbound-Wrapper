@@ -41,7 +41,7 @@ jobs:
         id: bump
         run: |
           npm version patch -m "chore(release): %s [skip ci]"
-          echo "new_version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+          echo new_version=$(node -p "require('./package.json').version") >> $GITHUB_OUTPUT
 
       - name: Show bumped version
         run: |
