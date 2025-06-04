@@ -6,7 +6,9 @@
     "start": "electron .",
     "start:prod": "cross-env NODE_ENV=production electron .",
     "package:win": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=win32 --arch=x64 --icon=icon.ico --overwrite",
-    "package:mac": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=darwin --arch=x64 --icon=icon.icns --overwrite"
+    "package:mac": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=darwin --arch=x64 --icon=icon.ico --overwrite",
+    "package:linux": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=linux --arch=x64 --icon=icon.ico --overwrite",
+    "test": "node tests/test.js"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
