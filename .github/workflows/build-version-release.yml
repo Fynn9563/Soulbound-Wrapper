@@ -1,0 +1,111 @@
+name: Build, Version and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Bump version
+        id: bump
+        run: |
+          npm version patch -m "chore(release): %s [skip ci]"
+          echo "new_version=$(node -p 'require(\"./package.json\").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Push changes
+        run: git push --follow-tags
+
+  build:
+    needs: version
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            artifact: win64
+            script: win
+          - os: macos-latest
+            platform: darwin
+            artifact: mac
+            script: mac
+          - os: ubuntu-latest
+            platform: linux
+            artifact: linux
+            script: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Package application
+        run: npm run package:${{ matrix.script }} -- --app-version "${{ needs.version.outputs.new_version }}"
+
+      - name: Zip package
+        shell: bash
+        run: |
+          folder=Soulbound-${{ matrix.platform }}-x64
+          zip -r release-${{ matrix.artifact }}.zip "$folder"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.artifact }}
+          path: release-${{ matrix.artifact }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ needs.version.outputs.new_version }}
+          name: v${{ needs.version.outputs.new_version }}
+          artifacts: artifacts/**/*.zip
+          draft: false
+          prerelease: false
+          generateReleaseNotes: true
