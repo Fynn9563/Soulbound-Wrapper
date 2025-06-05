@@ -2,9 +2,9 @@
 const { app, BrowserWindow, globalShortcut, Menu, ipcMain } = require('electron');
 const path = require('path');
 
-let win;               
-let exitWindow = null; 
-let quitMenu;          
+let win;
+let exitWindow = null;
+let quitMenu;
 let isQuitDialogOpen = false;
 
 const PERFORMANCE_FLAGS = [
@@ -36,14 +36,12 @@ PERFORMANCE_FLAGS.forEach(flag => {
 });
 
 function createWindow() {
-  // Remove default menu
-  Menu.setApplicationMenu(null);
-
   win = new BrowserWindow({
     fullscreen: true,
     frame: true,
     resizable: true,
     show: false,
+    autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -55,39 +53,61 @@ function createWindow() {
     }
   });
 
-  win.setAspectRatio(16 / 9);
-  win.setMenuBarVisibility(false);
+  if (typeof win.setAspectRatio === 'function') {
+    win.setAspectRatio(16 / 9);
+  }
 
-  win.once('ready-to-show', () => {
-    win.show();
-  });
-
-  win.loadURL('https://play.soulbound.game/');
-
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.setZoomFactor(1);
-    win.webContents.insertCSS(`
-      html, body, canvas, img {
-        image-rendering: pixelated !important;
+  if (typeof win.once === 'function') {
+    win.once('ready-to-show', () => {
+      if (typeof win.show === 'function') {
+        win.show();
       }
-    `);
-  });
+    });
+  }
 
-  win.on('enter-full-screen', () => {
-    win.setMenuBarVisibility(false);
-  });
+  if (typeof win.loadURL === 'function') {
+    win.loadURL('https://play.soulbound.game/');
+  }
 
-  win.on('leave-full-screen', () => {
-    win.setMenuBarVisibility(false);
-  });
+  if (win.webContents && typeof win.webContents.on === 'function') {
+    win.webContents.on('did-finish-load', () => {
+      if (typeof win.webContents.setZoomFactor === 'function') {
+        win.webContents.setZoomFactor(1);
+      }
+      if (typeof win.webContents.insertCSS === 'function') {
+        win.webContents.insertCSS(`
+          html, body, canvas, img {
+            image-rendering: pixelated !important;
+          }
+        `);
+      }
+    });
+  }
 
-  // Quit context menu on right-click
-  quitMenu = Menu.buildFromTemplate([
-    { label: 'Quit', click: confirmQuit }
-  ]);
-  win.webContents.on('context-menu', () => {
-    quitMenu.popup({ window: win });
-  });
+  if (typeof win.on === 'function') {
+    win.on('enter-full-screen', () => {
+      if (typeof win.setMenuBarVisibility === 'function') {
+        win.setMenuBarVisibility(false);
+      }
+    });
+
+    win.on('leave-full-screen', () => {
+      if (typeof win.setMenuBarVisibility === 'function') {
+        win.setMenuBarVisibility(false);
+      }
+    });
+  }
+
+  if (Menu && typeof Menu.buildFromTemplate === 'function' && win.webContents && typeof win.webContents.on === 'function') {
+    quitMenu = Menu.buildFromTemplate([
+      { label: 'Quit', click: confirmQuit }
+    ]);
+    win.webContents.on('context-menu', () => {
+      if (quitMenu && typeof quitMenu.popup === 'function') {
+        quitMenu.popup({ window: win });
+      }
+    });
+  }
 }
 
 function confirmQuit() {
@@ -110,14 +130,24 @@ function confirmQuit() {
     }
   });
 
-  exitWindow.loadFile(path.join(__dirname, 'exit.html'));
-  exitWindow.once('ready-to-show', () => {
-    exitWindow.show();
-  });
-  exitWindow.on('closed', () => {
-    isQuitDialogOpen = false;
-    exitWindow = null;
-  });
+  if (typeof exitWindow.loadFile === 'function') {
+    exitWindow.loadFile(path.join(__dirname, 'exit.html'));
+  }
+
+  if (typeof exitWindow.once === 'function') {
+    exitWindow.once('ready-to-show', () => {
+      if (typeof exitWindow.show === 'function') {
+        exitWindow.show();
+      }
+    });
+  }
+
+  if (typeof exitWindow.on === 'function') {
+    exitWindow.on('closed', () => {
+      isQuitDialogOpen = false;
+      exitWindow = null;
+    });
+  }
 }
 
 ipcMain.on('exit-dialog-selection', (e, action) => {
@@ -129,16 +159,20 @@ ipcMain.on('exit-dialog-selection', (e, action) => {
 });
 
 function registerShortcuts() {
-  globalShortcut.register('Escape', confirmQuit);
-  globalShortcut.register('F11', () => {
-    if (win && win.isFullScreen()) {
-      win.setFullScreen(false);
-    }
-  });
+  if (typeof globalShortcut.register === 'function') {
+    globalShortcut.register('Escape', confirmQuit);
+    globalShortcut.register('F11', () => {
+      if (win && typeof win.isFullScreen === 'function' && win.isFullScreen()) {
+        win.setFullScreen(false);
+      }
+    });
+  }
 }
 
 function unregisterShortcuts() {
-  globalShortcut.unregisterAll();
+  if (typeof globalShortcut.unregisterAll === 'function') {
+    globalShortcut.unregisterAll();
+  }
 }
 
 function start() {
@@ -146,19 +180,23 @@ function start() {
     createWindow();
     registerShortcuts();
 
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-        registerShortcuts();
-      }
-    });
+    if (typeof app.on === 'function') {
+      app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+          createWindow();
+          registerShortcuts();
+        }
+      });
+    }
   }).then(() => {
-    app.on('will-quit', unregisterShortcuts);
-    app.on('window-all-closed', () => {
-      if (process.platform !== 'darwin') {
-        app.quit();
-      }
-    });
+    if (typeof app.on === 'function') {
+      app.on('will-quit', unregisterShortcuts);
+      app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') {
+          app.quit();
+        }
+      });
+    }
   });
 }
 
