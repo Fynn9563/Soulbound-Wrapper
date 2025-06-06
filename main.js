@@ -63,13 +63,15 @@ function createWindow() {
   const webContents = win.webContents;
   const session = webContents.session;
 
-  if (blockedUrls.length > 0) {
+  // Block specific audio URLs if session.webRequest is available
+  if (session && session.webRequest && blockedUrls.length > 0) {
     session.webRequest.onBeforeRequest({ urls: blockedUrls }, (details, callback) => {
       console.log(`[BLOCKED] ${details.method} ${details.url}`);
       callback({ cancel: true });
     });
   }
 
+  // Detect ESC hold & F12
   webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape') {
       if (input.type === 'keyDown' && !input.isAutoRepeat) {
@@ -117,9 +119,7 @@ function createWindow() {
   win.on('leave-full-screen', () => win.setMenuBarVisibility(false));
 
   quitMenu = Menu.buildFromTemplate([{ label: 'Quit', click: confirmQuit }]);
-  webContents.on('context-menu', () => {
-    quitMenu.popup({ window: win });
-  });
+  webContents.on('context-menu', () => quitMenu.popup({ window: win }));
 }
 
 function confirmQuit() {

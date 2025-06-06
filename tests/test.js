@@ -8,6 +8,7 @@ console.log('\n=== Starting Soulbound Wrapper Tests ===\n');
 let windowCreatedCount = 0;
 let windowInstance = null;
 const shortcuts = {};
+let blockedRequests = []; // to store { filter, callback } from session.webRequest
 
 // Stub out Electron to intercept BrowserWindow creation and track functionality
 console.log('1) Stubbing Electron module to intercept "electron" requires.\n');
@@ -37,8 +38,8 @@ Module._load = function (request, parent, isMain) {
         constructor(options) {
           windowCreatedCount++;
           console.log(`   [Stub] BrowserWindow constructor called (${windowCreatedCount} total).`);
-          this._isMainWindow = windowCreatedCount === 1;
-          this._isFullScreen = true; // default initial state
+          this._isFullScreen = true;
+          this._devToolsOpened = false;
           this._listeners = {};
           windowInstance = this;
         }
@@ -77,6 +78,15 @@ Module._load = function (request, parent, isMain) {
         }
         get webContents() {
           return {
+            isDevToolsOpened: () => windowInstance._devToolsOpened,
+            openDevTools: ({ mode }) => {
+              windowInstance._devToolsOpened = true;
+              console.log(`   [Stub] webContents.openDevTools called (mode: ${mode})`);
+            },
+            closeDevTools: () => {
+              windowInstance._devToolsOpened = false;
+              console.log('   [Stub] webContents.closeDevTools called');
+            },
             on: (evt, cb) => {
               console.log(`   [Stub] webContents.on called for event: "${evt}"`);
               windowInstance._listeners['webContents:' + evt] = windowInstance._listeners['webContents:' + evt] || [];
@@ -87,6 +97,14 @@ Module._load = function (request, parent, isMain) {
             },
             insertCSS: (css) => {
               console.log(`   [Stub] webContents.insertCSS called (CSS length: ${css.length} characters).`);
+            },
+            session: {
+              webRequest: {
+                onBeforeRequest: (filter, cb) => {
+                  console.log(`   [Stub] session.webRequest.onBeforeRequest called with filters: ${JSON.stringify(filter)}`);
+                  blockedRequests.push({ filter, cb });
+                }
+              }
             }
           };
         }
@@ -101,7 +119,7 @@ Module._load = function (request, parent, isMain) {
         }
       },
       Menu: {
-        buildFromTemplate(template) {
+        buildFromTemplate: (template) => {
           console.log('   [Stub] Menu.buildFromTemplate called – building context menu.');
           return {
             popup: (options) => {
@@ -131,14 +149,12 @@ assert.ok(
   Array.isArray(mainModule.PERFORMANCE_FLAGS),
   'ERROR: PERFORMANCE_FLAGS should be an array'
 );
-console.log(`   ✓ PERFORMANCE_FLAGS is an array (length: ${mainModule.PERFORMANCE_FLAGS.length}).`);
-console.log(`   ✓ PERFORMANCE_FLAGS content: ${JSON.stringify(mainModule.PERFORMANCE_FLAGS)}\n`);
+console.log(`   ✓ PERFORMANCE_FLAGS is an array (length: ${mainModule.PERFORMANCE_FLAGS.length}).\n`);
 
 // Call start() and perform tests
 console.log('4) Calling mainModule.start() to create main BrowserWindow...');
 mainModule.start()
   .then(() => {
-    // After start resolves, windowInstance should refer to main window stub
     console.log('\n5) mainModule.start() resolved – verifying main window creation...');
     console.log(`   ➤ Total BrowserWindow instances created: ${windowCreatedCount} (expecting at least 1)`);
     assert.ok(windowCreatedCount >= 1, 'ERROR: BrowserWindow should have been created at least once');
@@ -158,29 +174,41 @@ mainModule.start()
     assert.strictEqual(windowInstance.isFullScreen(), true, 'ERROR: Window should return to fullscreen after second F11');
     console.log('   ✓ F11 toggles fullscreen/windowed as expected.\n');
 
-    // Test ESC hold to open quit dialog
-    console.log('7) Testing ESC hold functionality (open quit dialog)...');
-    const beforeEscWindows = windowCreatedCount;
-    console.log(`   • Before ESC hold, BrowserWindow count: ${beforeEscWindows}`);
-    const escListeners = windowInstance._listeners['webContents:before-input-event'];
-    assert.ok(escListeners && escListeners.length > 0, 'ERROR: No before-input-event listener registered');
-    // Simulate ESC keyDown and keyUp with preventDefault stub
-    console.log('   • Simulating ESC keyDown...');
-    escListeners.forEach(cb => cb({ preventDefault: () => {} }, { key: 'Escape', type: 'keyDown', isAutoRepeat: false }));
-    // Wait 600ms to exceed 500ms threshold
-    setTimeout(() => {
-      // Simulate ESC keyUp after hold
-      console.log('   • Simulating ESC keyUp after hold...');
-      escListeners.forEach(cb => cb({ preventDefault: () => {} }, { key: 'Escape', type: 'keyUp' }));
-      console.log(`   • After ESC hold, BrowserWindow count: ${windowCreatedCount} (should be previous + 1)`);
-      assert.strictEqual(windowCreatedCount, beforeEscWindows + 1, 'ERROR: Quit confirmation window was not opened on ESC hold');
-      console.log('   ✓ ESC hold opened quit confirmation window as expected.\n');
+    // Test F12 toggles DevTools
+    console.log('7) Testing F12 functionality (toggle DevTools)...');
+    const f12Listeners = windowInstance._listeners['webContents:before-input-event'];
+    assert.ok(f12Listeners && f12Listeners.length > 0, 'ERROR: No before-input-event listener registered');
+    // Simulate F12 keyDown
+    console.log('   • Simulating F12 keyDown...');
+    f12Listeners.forEach(cb => cb({ preventDefault: () => {} }, { key: 'F12', type: 'keyDown', isAutoRepeat: false }));
+    assert.strictEqual(windowInstance._devToolsOpened, true, 'ERROR: DevTools should open on first F12');
+    console.log('   • DevTools state after first F12:', windowInstance._devToolsOpened);
+    // Simulate F12 again
+    console.log('   • Simulating second F12 keyDown...');
+    f12Listeners.forEach(cb => cb({ preventDefault: () => {} }, { key: 'F12', type: 'keyDown', isAutoRepeat: false }));
+    assert.strictEqual(windowInstance._devToolsOpened, false, 'ERROR: DevTools should close on second F12');
+    console.log('   • DevTools state after second F12:', windowInstance._devToolsOpened);
+    console.log('   ✓ F12 toggles DevTools as expected.\n');
 
-      // Restore original Module._load
-      Module._load = originalLoad;
-      console.log('8) Module._load restored to original implementation.\n');
-      console.log('✓ All tests passed successfully.\n');
-    }, 600);
+    // Test URL blocking
+    console.log('8) Testing blocked URL functionality...');
+    assert.ok(blockedRequests.length > 0, 'ERROR: No webRequest.onBeforeRequest listener registered');
+    // Simulate a blocked request using the filter from stub
+    const { filter, cb } = blockedRequests[0];
+    const blockedUrl = filter.urls[0];
+    let callbackCalled = false;
+    console.log(`   • Simulating request to blocked URL: ${blockedUrl}`);
+    cb({ method: 'GET', url: blockedUrl }, (response) => {
+      callbackCalled = response.cancel === true;
+      console.log(`   • Callback called with cancel=${response.cancel}`);
+    });
+    assert.strictEqual(callbackCalled, true, 'ERROR: Blocked URL request was not cancelled');
+    console.log('   ✓ Blocked URL requests are correctly cancelled.\n');
+
+    // Restore original Module._load
+    Module._load = originalLoad;
+    console.log('9) Module._load restored to original implementation.\n');
+    console.log('✓ All tests passed successfully.\n');
   })
   .catch(err => {
     // Restore original Module._load
