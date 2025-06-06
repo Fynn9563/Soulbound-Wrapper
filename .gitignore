@@ -50,3 +50,4 @@ temp/
 # Electron & packaging
 app.asar
 electron-builder.json
+audio_cache
