@@ -109,7 +109,7 @@ jobs:
         run: npm run dist:${{ matrix.script }}
         shell: bash
 
-      - name: Compress portable build (macOS/Linux) with verbose output
+      - name: Compress build (macOS/Linux) with verbose output
         if: runner.os != 'Windows'
         shell: bash
         run: |
@@ -118,7 +118,7 @@ jobs:
           if [ "$(uname)" = "Linux" ]; then
             src="dist/linux-unpacked"
           else
-            src="dist/mac"
+            src="dist/mac-arm64"
           fi
           echo "== Compressing portable build =="
           echo "Version: $v"
@@ -130,7 +130,7 @@ jobs:
           7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
           echo "Compression exit code: $?"
 
-      - name: Compress portable build (Windows) with verbose output
+      - name: Compress build (Windows) with verbose output
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
