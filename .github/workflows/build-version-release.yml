@@ -12,6 +12,9 @@ on:
 permissions:
   contents: write
 
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   version:
     runs-on: ubuntu-latest
@@ -126,6 +129,7 @@ jobs:
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
+          token: ${{ env.GH_TOKEN }}
           tag: v${{ needs.version.outputs.new_version }}
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: artifacts/**
