@@ -43,5 +43,8 @@
     "electron": "^36.4.0",
     "electron-builder": "^24.13.3",
     "electron-packager": "^16.0.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
   }
 }
