@@ -47,13 +47,14 @@ jobs:
         id: bump
         run: |
           npm version patch -m "chore(release): %s [skip ci]"
-          echo "new_version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+          echo new_version=$(node -p "require('./package.json').version") >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Show bumped version
-        run: echo "step-level bump.outputs.new_version = ${{ steps.bump.outputs.new_version }}"
+        run: |
+          echo "step-level bump.outputs.new_version = ${{ steps.bump.outputs.new_version }}"
         shell: bash
-
+        
       - name: Push commit and tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
