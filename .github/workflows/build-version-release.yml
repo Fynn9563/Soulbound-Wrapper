@@ -152,7 +152,7 @@ jobs:
           tag: v${{ needs.version.outputs.new_version }}
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: |
-            artifacts/soulbound-*-x64.*.7z,
+            artifacts/*.7z,
             artifacts/**/dist/**/Soulbound-Setup-*.exe,
             artifacts/**/dist/**/*.dmg,
             artifacts/**/dist/**/*.AppImage,
