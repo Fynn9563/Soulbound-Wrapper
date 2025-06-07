@@ -1,4 +1,4 @@
-// main.js
+// main.js 
 const { app, BrowserWindow, Menu, ipcMain, globalShortcut, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
