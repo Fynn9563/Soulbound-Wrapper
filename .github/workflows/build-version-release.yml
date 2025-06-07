@@ -115,11 +115,10 @@ jobs:
         run: |
           v=${{ needs.version.outputs.new_version }}
           if [ "$(uname)" = "Linux" ]; then
-            src="dist/linux-unpacked"
+            src="Soulbound-linux-x64"
           else
-            src="dist/mac-arm64"
+            src="Soulbound-darwin-x64"
           fi
-          echo "== Compressing portable build =="
           echo "Version: $v"
           echo "Source directory: $src"
           echo "Listing contents of $src:"
@@ -129,19 +128,19 @@ jobs:
           7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
           echo "Exit code: $?"
 
-      - name: Compress application (Windows)
+      - name: Compress build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
-          $src = 'dist\win-unpacked'
+          $src = 'Soulbound-win-x64'
           Write-Host "Version: $v"
           Write-Host ("Source directory: {0}" -f $src)
           Write-Host "Listing contents of $src:"
           Get-ChildItem $src -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
           Write-Host
           Write-Host "Starting compression..."
-          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.win.7z" "$src\*" 2>&1 |
+          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.nsis.7z" "$src\*" 2>&1 |
             ForEach-Object { Write-Host $_ }
           Write-Host ("`nExit code: {0}" -f $LASTEXITCODE)
 
@@ -159,18 +158,25 @@ jobs:
             Get-ChildItem dist -Recurse | Write-Host
           fi
 
-      - name: Upload artifacts
+      - name: Upload artifacts (macOS/Linux)
+        if: runner.os != 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}
           path: |
-            soulbound-${{ needs.version.outputs.new_version }}-x64.*.7z
-            # Windows installer and manifest
-            dist/**/Soulbound-Setup-*.exe
+            soulbound-${{ needs.version.outputs.new_version }}-x64.${{ matrix.script }}.7z
+            dist/*.dmg
+            dist/*.AppImage
+
+      - name: Upload artifacts (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: |
+            dist/nsis-web/Soulbound-Setup-*.exe
             dist/nsis-web/soulbound-*-x64.nsis.7z
             dist/nsis-web/latest.yml
-            # macOS
-            soulbound-darwin-x64/Soulbound.app
 
   release:
     needs: [version, build]
@@ -189,10 +195,10 @@ jobs:
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: |
             artifacts/soulbound-*-x64.*.7z,
-            artifacts/**/dist/**/Soulbound-Setup-*.exe,
+            artifacts/nsis-web/Soulbound-Setup-*.exe,
             artifacts/nsis-web/soulbound-*-x64.nsis.7z,
             artifacts/nsis-web/latest.yml,
-            artifacts/*.app,
+            artifacts/*.dmg,
             artifacts/*.AppImage
           draft: false
           prerelease: false
