@@ -1,4 +1,4 @@
-// main.js 
+// main.js
 const { app, BrowserWindow, Menu, ipcMain, globalShortcut, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -138,10 +138,6 @@ function confirmQuit() {
 ipcMain.on('exit-dialog-selection', (e, action) => {
   if (action === 'cancel') exitWindow?.close();
   else if (action === 'quit') app.quit();
-});
-
-ipcMain.on('update-now', () => autoUpdater.quitAndInstall());
-ipcMain.on('update-later', () => {
 });
 
 function start() {

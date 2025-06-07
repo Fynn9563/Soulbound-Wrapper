@@ -6,14 +6,12 @@ const path = require('path');
 let updaterWindow = null;
 
 function initAutoUpdater(mainWin) {
-  // Point to your GitHub repo
   autoUpdater.setFeedURL({
     provider: 'github',
     owner: 'Fynn9563',
     repo: 'Soulbound-Wrapper'
   });
 
-  // Show the update window when there’s an available update
   autoUpdater.on('update-available', () => {
     if (updaterWindow) return;
 
@@ -25,10 +23,10 @@ function initAutoUpdater(mainWin) {
       resizable: false,
       transparent: true,
       movable: true,
-      closable: false,         // disable the “X” button
+      closable: false,
       alwaysOnTop: true,
-      skipTaskbar: false,      // show in taskbar
-      autoHideMenuBar: true,   // hide File/Edit/etc
+      skipTaskbar: false,
+      autoHideMenuBar: true,
       show: false,
       webPreferences: {
         contextIsolation: false,
@@ -37,16 +35,10 @@ function initAutoUpdater(mainWin) {
     });
 
     updaterWindow.loadFile(path.join(__dirname, 'update.html'));
-    updaterWindow.once('ready-to-show', () => {
-      updaterWindow.show();
-    });
-
-    updaterWindow.on('closed', () => {
-      updaterWindow = null;
-    });
+    updaterWindow.once('ready-to-show', () => updaterWindow.show());
+    updaterWindow.on('closed', () => { updaterWindow = null; });
   });
 
-  // Send integer-only progress
   autoUpdater.on('download-progress', progress => {
     const percent = Math.floor(progress.percent);
     updaterWindow?.webContents.send('download-progress', {
@@ -56,21 +48,18 @@ function initAutoUpdater(mainWin) {
     });
   });
 
-  // Signal when download is finished
   autoUpdater.on('update-downloaded', () => {
     updaterWindow?.webContents.send('update-downloaded');
   });
 
-  // Kick off the check
-  autoUpdater.checkForUpdatesAndNotify();
+
+  autoUpdater.checkForUpdates();
 }
 
-// “Now” button → quit & install immediately
 ipcMain.on('update-now', () => {
   autoUpdater.quitAndInstall();
 });
 
-// “Later” button → close the updater window
 ipcMain.on('update-later', () => {
   if (updaterWindow) updaterWindow.close();
 });
