@@ -110,30 +110,26 @@ jobs:
         shell: bash
         run: |
           v=${{ needs.version.outputs.new_version }}
-          7z a soulbound-$v-x64.${{ matrix.script }}.7z "Soulbound-*-${{ matrix.script }}-x64/*" -r
+          # Electron Builder outputs a linux AppImage but also leaves an unpacked dir
+          # For Linux: dist/linux-unpacked
+          # For macOS: dist/mac (this contains Soulbound.app)
+          if [ "${RUNNER_OS}" = "Linux" ]; then
+            src="dist/linux-unpacked"
+          else
+            src="dist/mac"
+          fi
+          echo "Compressing $src -> soulbound-$v-x64.${{ matrix.script }}.7z"
+          7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
 
-      - name: Compress portable build (Windows) with debug
+      - name: Compress portable build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
-          Write-Host "`n== Windows Compression Debug =="
-          $folder = Get-ChildItem -Directory Soulbound-*-${{ matrix.script }}-x64 | Select-Object -First 1
-          Write-Host "Folder to compress:"
-          Write-Host "  $($folder.FullName)`n"
-
-          Write-Host "Contents of folder:"
-          Get-ChildItem $folder.FullName -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
-
-          Push-Location $folder.FullName
-          Write-Host "`nCurrent directory:" (Get-Location)
-
-          Write-Host "`nRunning 7z to compress everything under here:"
-          & 7z a -bb3 -bsp1 -bse1 -r "..\soulbound-$v-x64.${{ matrix.script }}.7z" "*" 2>&1 |
-            ForEach-Object { Write-Host $_ }
-
-          Write-Host "`nCompression finished with exit code $LASTEXITCODE"
-          Pop-Location
+          # Electron Builder leaves an unpacked app in dist/win-unpacked
+          $src = "dist\\win-unpacked"
+          Write-Host "Compressing $src -> soulbound-$v-x64.${{ matrix.script }}.7z"
+          & 7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$src\\*" -r
 
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
