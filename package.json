@@ -25,21 +25,17 @@
     "electron-packager": "^16.0.0"
   },
   "build": {
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+
     "appId": "com.fynn9563.soulbound",
     "productName": "Soulbound",
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "**/*"
-    ],
+    "files": ["**/*"],
+
     "win": {
-      "target": [
-        {
-          "target": "nsis-web",
-          "artifactName": "${productName}-Setup-${version}.${ext}"
-        }
-      ]
+      "target": ["nsis-web"]
     },
     "nsis": {
       "oneClick": false,
@@ -54,6 +50,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     },
+
     "mac": {
       "target": "dmg"
     },
@@ -61,6 +58,7 @@
       "target": "AppImage",
       "category": "Game"
     },
+
     "publish": [
       {
         "provider": "github",
