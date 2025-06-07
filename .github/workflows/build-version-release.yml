@@ -134,15 +134,15 @@ jobs:
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
-          $src = 'dist\win-unpacked'
+          $src = "dist\win-unpacked"
           Write-Host "== Compressing portable build =="
           Write-Host ("Version: {0}" -f $v)
           Write-Host ("Source directory: {0}" -f $src)
-          Write-Host "Contents of $src:"
+          Write-Host ("Contents of {0}:" -f $src)
           Get-ChildItem $src -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
           Write-Host
           Write-Host "Running 7z with verbose flags..."
-          & 7z a -bb3 -bsp1 -bse1 ("soulbound-{0}-x64.{1}.7z" -f $v, ${{ matrix.script }} ) "$src\*" 2>&1 |
+          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src\*" 2>&1 |
             ForEach-Object { Write-Host $_ }
           Write-Host ("`nCompression exit code: {0}" -f $LASTEXITCODE)
 
