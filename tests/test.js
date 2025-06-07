@@ -92,7 +92,7 @@ Module._load = function(request, parent, isMain) {
     return {
       autoUpdater: {
         setFeedURL() {},
-        checkForUpdatesAndNotify() {},
+        checkForUpdates() {},
         on() {},
         quitAndInstall() {}
       }
