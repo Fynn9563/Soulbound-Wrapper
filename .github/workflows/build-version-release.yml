@@ -105,18 +105,20 @@ jobs:
         run: npm run package:${{ matrix.script }}
         shell: bash
 
-      - name: Zip portable build (macOS/Linux)
+      - name: Compress portable build (macOS/Linux)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          zip -r Soulbound-${{ matrix.script }}-portable.zip Soulbound-*-x64
+          v=${{ needs.version.outputs.new_version }}
+          7z a soulbound-$v-x64.${{ matrix.script }}.7z Soulbound-*-${{ matrix.script }}-x64
 
-      - name: Zip portable build (Windows)
+      - name: Compress portable build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $folder = Get-ChildItem -Directory Soulbound-*-x64 | Select-Object -First 1
-          Compress-Archive -Path "$($folder.FullName)\*" -DestinationPath "Soulbound-${{ matrix.script }}-portable.zip"
+          $v = '${{ needs.version.outputs.new_version }}'
+          $folder = Get-ChildItem -Directory Soulbound-*-${{ matrix.script }}-x64 | Select-Object -First 1
+          & 7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$($folder.FullName)\*"
 
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
@@ -127,7 +129,7 @@ jobs:
         with:
           name: release-${{ matrix.script }}
           path: |
-            Soulbound-${{ matrix.script }}-portable.zip
+            soulbound-${{ needs.version.outputs.new_version }}-x64.*.7z
             dist/**/Soulbound-Setup-*.exe
             dist/*.dmg
             dist/*.AppImage
@@ -150,11 +152,11 @@ jobs:
           tag: v${{ needs.version.outputs.new_version }}
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: |
-            artifacts/**/Soulbound-*-portable.zip,
+            artifacts/soulbound-*-x64.*.7z,
             artifacts/**/dist/**/Soulbound-Setup-*.exe,
-            artifacts/**/dist/*.dmg,
-            artifacts/**/dist/*.AppImage,
-            artifacts/**/dist/latest*.yml,
+            artifacts/**/dist/**/*.dmg,
+            artifacts/**/dist/**/*.AppImage,
+            artifacts/**/dist/nsis-web/latest.yml,
             artifacts/**/dist/nsis-web/latest.yml
           draft: false
           prerelease: false
