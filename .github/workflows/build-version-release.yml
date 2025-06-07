@@ -80,6 +80,7 @@ jobs:
           path: |
             Soulbound-*-${{ matrix.script }}-x64/*
             dist/*.${{ matrix.ext }}
+            dist/latest*.yml
 
   release:
     needs: [version, build]
