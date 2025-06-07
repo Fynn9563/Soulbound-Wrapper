@@ -18,16 +18,30 @@
   "dependencies": {
     "electron-updater": "^6.6.2"
   },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^36.4.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^16.0.0"
+  },
   "build": {
     "appId": "com.fynn9563.soulbound",
     "productName": "Soulbound",
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "**/*"
-    ],
+    "files": ["**/*"],
+    "win": {
+      "target": ["nsis-web"]
+    },
     "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "differentialPackage": true
+    },
+    "nsisWeb": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
@@ -47,11 +61,5 @@
         "repo": "Soulbound-Wrapper"
       }
     ]
-  },
-  "devDependencies": {
-    "cross-env": "^7.0.3",
-    "electron": "^36.4.0",
-    "electron-builder": "^24.13.3",
-    "electron-packager": "^16.0.0"
   }
 }
