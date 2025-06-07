@@ -127,23 +127,23 @@ jobs:
           echo
           echo "Starting compression..."
           7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
-          echo "Exit code: $?"
-
-      - name: Compress application (Windows)
+          echo "Compression exit code: $?"
+      - name: Compress build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
-          $src = 'dist\win-unpacked'
-          Write-Host "Version: $v"
+          $src = "dist\win-unpacked"
+          Write-Host "== Compressing portable build =="
+          Write-Host ("Version: {0}" -f $v)
           Write-Host ("Source directory: {0}" -f $src)
-          Write-Host "Listing contents of $src:"
+          Write-Host ("Contents of {0}:" -f $src)
           Get-ChildItem $src -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
           Write-Host
-          Write-Host "Starting compression..."
-          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.win.7z" "$src\*" 2>&1 |
+          Write-Host "Running 7z with verbose flags..."
+          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src\*" 2>&1 |
             ForEach-Object { Write-Host $_ }
-          Write-Host ("`nExit code: {0}" -f $LASTEXITCODE)
+          Write-Host ("`nCompression exit code: {0}" -f $LASTEXITCODE)
 
       - name: List entire workspace (macOS/Linux)
         if: runner.os != 'Windows'
@@ -172,8 +172,10 @@ jobs:
             dist/nsis-web/soulbound-*-x64.nsis.7z
             dist/nsis-web/latest.yml
             # macOS
-            soulbound-darwin-x64/Soulbound.app
-
+            dist/**/*.dmg
+			# Linux
+			dist/**/*.AppImage
+			
   release:
     needs: [version, build]
     runs-on: ubuntu-latest
@@ -194,8 +196,8 @@ jobs:
             artifacts/**/dist/**/Soulbound-Setup-*.exe,
             artifacts/nsis-web/soulbound-*-x64.nsis.7z,
             artifacts/nsis-web/latest.yml,
-            artifacts/*.app,
-            artifacts/*.AppImage
+            artifacts/**/dist/**/*.dmg,
+            artifacts/**/dist/**/*.AppImage
           draft: false
           prerelease: false
           generateReleaseNotes: true
