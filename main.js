@@ -185,7 +185,7 @@ function start() {
 }
 
 start();
-
+ 
 module.exports = {
   PERFORMANCE_FLAGS,
   start
