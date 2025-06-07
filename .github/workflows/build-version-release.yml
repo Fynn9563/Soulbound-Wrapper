@@ -107,7 +107,7 @@ jobs:
 
       - name: Zip portable build
         run: |
-          zip -r Soulbound-${{ matrix.script }}-portable.zip Soulbound-${{ matrix.script }}-x64
+          zip -r Soulbound-${{ matrix.script }}-portable.zip Soulbound-*-x64
         shell: bash
 
       - name: Build installer
@@ -119,7 +119,7 @@ jobs:
         with:
           name: release-${{ matrix.script }}
           path: |
-            Soulbound-*-${{ matrix.script }}-portable.zip
+            Soulbound-${{ matrix.script }}-portable.zip
             dist/*.${{ matrix.ext }}
             dist/latest*.yml
 
