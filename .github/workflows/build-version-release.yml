@@ -105,6 +105,11 @@ jobs:
         run: npm run package:${{ matrix.script }}
         shell: bash
 
+      - name: Zip portable build
+        run: |
+          zip -r Soulbound-${{ matrix.script }}-portable.zip Soulbound-${{ matrix.script }}-x64
+        shell: bash
+
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
         shell: bash
@@ -114,7 +119,7 @@ jobs:
         with:
           name: release-${{ matrix.script }}
           path: |
-            Soulbound-*-${{ matrix.script }}-x64/*
+            Soulbound-*-${{ matrix.script }}-portable.zip
             dist/*.${{ matrix.ext }}
             dist/latest*.yml
 
