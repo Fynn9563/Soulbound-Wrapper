@@ -1,6 +1,6 @@
 {
   "name": "soulbound",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "description": "A native-like desktop wrapper for the Soulbound pixel-art RPG",
   "author": "Fynn9563",
   "main": "main.js",
@@ -30,7 +30,9 @@
     "directories": {
       "output": "dist"
     },
-    "files": ["**/*"],
+    "files": [
+      "**/*"
+    ],
     "win": {
       "target": [
         {
