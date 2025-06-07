@@ -1,7 +1,11 @@
 // main.js
-const { app, BrowserWindow, Menu, ipcMain, globalShortcut } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, globalShortcut, session } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
+
+Object.defineProperty(app, 'isPackaged', { get: () => true });
+autoUpdater.forceDevUpdateConfig = true;
 
 let win;
 let exitWindow = null;
@@ -11,20 +15,14 @@ let escHoldTimeout = null;
 let escDialogOpened = false;
 let escKeyDownTime = null;
 
-// Load blocked URL patterns from "blocked_urls.txt"
 let blockedUrls = [];
 try {
-  const lines = fs.readFileSync(path.join(__dirname, 'blocked_urls.txt'), 'utf-8')
+  blockedUrls = fs
+    .readFileSync(path.join(__dirname, 'blocked_urls.txt'), 'utf-8')
     .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => line && !line.startsWith('#'));
-  // Replace specific cache_version values with wildcard
-  blockedUrls = lines.map(url =>
-    url.replace(/cache_version=[^&]+/, 'cache_version=*')
-  );
-} catch {
-  console.warn('Could not load blocked_urls.txt; no URLs will be blocked.');
-}
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
+} catch {}
 
 const PERFORMANCE_FLAGS = [
   'enable-gpu',
@@ -43,9 +41,9 @@ const PERFORMANCE_FLAGS = [
   'disable-features=AudioServiceOutOfProcess,MouseSubsampling,SubpixelFontScaling,SharedImageCacheOnDisk,SkiaVulkan',
   'enable-async-dns'
 ];
-PERFORMANCE_FLAGS.forEach(flag => {
-  const [key, value] = flag.split('=');
-  app.commandLine.appendSwitch(key, value);
+PERFORMANCE_FLAGS.forEach(f => {
+  const [k, v] = f.split('=');
+  app.commandLine.appendSwitch(k, v);
 });
 
 function createWindow() {
@@ -66,19 +64,14 @@ function createWindow() {
   });
 
   win.setAspectRatio(16 / 9);
-  const webContents = win.webContents;
-  const session = webContents.session;
+  const wc = win.webContents;
+  const ses = wc.session;
 
-  // Block specific audio URL patterns
-  if (session && session.webRequest && blockedUrls.length > 0) {
-    session.webRequest.onBeforeRequest({ urls: blockedUrls }, (details, callback) => {
-      console.log(`[BLOCKED] ${details.method} ${details.url}`);
-      callback({ cancel: true });
-    });
+  if (ses && ses.webRequest && blockedUrls.length) {
+    ses.webRequest.onBeforeRequest({ urls: blockedUrls }, (details, cb) => cb({ cancel: true }));
   }
 
-  // Detect ESC hold & F12
-  webContents.on('before-input-event', (event, input) => {
+  wc.on('before-input-event', (e, input) => {
     if (input.key === 'Escape') {
       if (input.type === 'keyDown' && !input.isAutoRepeat) {
         escKeyDownTime = Date.now();
@@ -87,45 +80,29 @@ function createWindow() {
           confirmQuit();
         }, 500);
       } else if (input.type === 'keyUp' && escKeyDownTime !== null) {
-        if (!escDialogOpened) {
-          clearTimeout(escHoldTimeout);
-        } else {
-          event.preventDefault();
-        }
+        if (!escDialogOpened) clearTimeout(escHoldTimeout);
+        else e.preventDefault();
         escKeyDownTime = null;
       }
     }
-
     if (input.key === 'F12' && input.type === 'keyDown') {
-      console.log('[DEBUG] F12 pressed – toggling DevTools');
-      if (!webContents.isDevToolsOpened()) {
-        webContents.openDevTools({ mode: 'detach' });
-        console.log('[DEBUG] DevTools opened');
-      } else {
-        webContents.closeDevTools();
-        console.log('[DEBUG] DevTools closed');
-      }
-      event.preventDefault();
+      if (!wc.isDevToolsOpened()) wc.openDevTools({ mode: 'detach' });
+      else wc.closeDevTools();
+      e.preventDefault();
     }
   });
 
   win.once('ready-to-show', () => win.show());
   win.loadURL('https://play.soulbound.game/');
-
-  webContents.on('did-finish-load', () => {
-    webContents.setZoomFactor(1);
-    webContents.insertCSS(`
-      html, body, canvas, img {
-        image-rendering: pixelated !important;
-      }
-    `);
+  wc.on('did-finish-load', () => {
+    wc.setZoomFactor(1);
+    wc.insertCSS('html, body, canvas, img { image-rendering: pixelated !important; }');
   });
-
   win.on('enter-full-screen', () => win.setMenuBarVisibility(false));
   win.on('leave-full-screen', () => win.setMenuBarVisibility(false));
 
   quitMenu = Menu.buildFromTemplate([{ label: 'Quit', click: confirmQuit }]);
-  webContents.on('context-menu', () => quitMenu.popup({ window: win }));
+  wc.on('context-menu', () => quitMenu.popup({ window: win }));
 }
 
 function confirmQuit() {
@@ -159,17 +136,28 @@ function confirmQuit() {
 }
 
 ipcMain.on('exit-dialog-selection', (e, action) => {
-  if (action === 'cancel' && exitWindow && !exitWindow.isDestroyed()) {
-    exitWindow.close();
-  } else if (action === 'quit') {
-    app.quit();
-  }
+  if (action === 'cancel') exitWindow?.close();
+  else if (action === 'quit') app.quit();
 });
+
+ipcMain.on('restart_app', () => autoUpdater.quitAndInstall());
 
 function start() {
   return app.whenReady().then(() => {
     createWindow();
     globalShortcut.register('F11', () => win.setFullScreen(!win.isFullScreen()));
+
+    try {
+      autoUpdater.setFeedURL({
+        provider: 'github',
+        owner: 'Fynn9563',
+        repo: 'Soulbound-Wrapper'
+      });
+      autoUpdater.checkForUpdatesAndNotify();
+      autoUpdater.on('update-available', () => win.webContents.send('update_available'));
+      autoUpdater.on('update-downloaded', () => win.webContents.send('update_downloaded'));
+    } catch {}
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();

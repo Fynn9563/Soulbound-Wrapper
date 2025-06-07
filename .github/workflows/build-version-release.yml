@@ -2,8 +2,7 @@ name: Build, Version and Release
 
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
@@ -19,43 +18,27 @@ jobs:
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
+      - run: npm test --if-present
 
-      - name: Run tests
-        run: npm test --if-present
-
-      - name: Configure Git
-        run: |
+      - run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Bump version
-        id: bump
+      - id: bump
         run: |
           npm version patch -m "chore(release): %s [skip ci]"
-          echo new_version=$(node -p "require('./package.json').version") >> $GITHUB_OUTPUT
+          echo "new_version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
 
-      - name: Show bumped version
-        run: |
-          echo "step-level bump.outputs.new_version = ${{ steps.bump.outputs.new_version }}"
-
-      - name: Push commit and tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" --follow-tags
+      - run: git push --follow-tags
 
   build:
     needs: version
@@ -63,78 +46,55 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            platform: win32
-            artifact: win64
             script: win
+            ext: exe
           - os: macos-latest
-            platform: darwin
-            artifact: mac
             script: mac
+            ext: dmg
           - os: ubuntu-latest
-            platform: linux
-            artifact: linux
             script: linux
+            ext: AppImage
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
+      - run: npm test --if-present
 
-      - name: Run tests
-        run: npm test --if-present
-
-      - name: Package application ( ${{ matrix.platform }} )
+      - name: Package portable build
         run: npm run package:${{ matrix.script }}
 
-      - name: Zip package (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          $folder = "Soulbound-${{ matrix.platform }}-x64"
-          powershell Compress-Archive -Path "$folder\*" -DestinationPath "release-${{ matrix.artifact }}.zip"
+      - name: Build installer
+        run: npm run dist:${{ matrix.script }}
 
-      - name: Zip package (Linux/macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          folder="Soulbound-${{ matrix.platform }}-x64"
-          zip -r "release-${{ matrix.artifact }}.zip" "$folder"
-
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.artifact }}
-          path: release-${{ matrix.artifact }}.zip
+          name: release-${{ matrix.script }}
+          path: |
+            Soulbound-*-${{ matrix.script }}-x64/*
+            dist/*.${{ matrix.ext }}
 
   release:
-    needs:
-      - version
-      - build
+    needs: [version, build]
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - name: Show consumed version
-        run: echo "needs.version.outputs.new_version = ${{ needs.version.outputs.new_version }}"
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: v${{ needs.version.outputs.new_version }}
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
-          artifacts: artifacts/**/*.zip
+          artifacts: artifacts/**
           draft: false
           prerelease: false
           generateReleaseNotes: true
