@@ -62,7 +62,7 @@ function initAutoUpdater(mainWin) {
   });
 
   // Kick off the check
-  autoUpdater.checkForUpdates();
+  autoUpdater.checkForUpdatesAndNotify();
 }
 
 // “Now” button → quit & install immediately
