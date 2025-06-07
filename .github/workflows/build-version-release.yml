@@ -170,8 +170,8 @@ jobs:
             soulbound-${{ needs.version.outputs.new_version }}-x64.*.7z
             # Windows installer and manifest
             dist/**/Soulbound-Setup-*.exe
-            dist/nsis-web/soulbound-*-x64.nsis.7z
-            dist/nsis-web/latest.yml
+            dist/**/soulbound-*-x64.nsis.7z
+            dist/**/latest.yml
             # macOS
             dist/**/*.dmg
             # Linux
@@ -197,12 +197,11 @@ jobs:
           tag: v${{ needs.version.outputs.new_version }}
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: |
-            artifacts/soulbound-*-x64.*.7z,
-            artifacts/**/dist/**/Soulbound-Setup-*.exe,
-            artifacts/nsis-web/soulbound-*-x64.nsis.7z,
-            artifacts/nsis-web/latest.yml,
-            artifacts/**/dist/**/*.dmg,
-            artifacts/**/dist/**/*.AppImage
+            artifacts/**/dist/soulbound-*-x64.*.7z,
+            artifacts/release-windows-latest/dist/**/latest.yml,
+            artifacts/release-windows-latest/dist/**/Soulbound-Setup-*.exe,
+            artifacts/release-macos-latest/dist/**/*.dmg,
+            artifacts/release-ubuntu-latest/dist/**/*.AppImage
           draft: false
           prerelease: false
           generateReleaseNotes: true
