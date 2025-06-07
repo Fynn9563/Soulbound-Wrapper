@@ -30,12 +30,13 @@
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "**/*"
-    ],
+    "files": ["**/*"],
     "win": {
       "target": [
-        "nsis-web"
+        {
+          "target": "nsis-web",
+          "artifactName": "${productName}-Setup-${version}.${ext}"
+        }
       ]
     },
     "nsis": {

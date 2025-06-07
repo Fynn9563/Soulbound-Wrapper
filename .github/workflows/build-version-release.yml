@@ -128,7 +128,9 @@ jobs:
           name: release-${{ matrix.script }}
           path: |
             Soulbound-${{ matrix.script }}-portable.zip
-            dist/**/*.${{ matrix.ext }}
+            dist/**/*.exe
+            dist/**/*.dmg
+            dist/**/*.AppImage
             dist/latest*.yml
 
   release:
@@ -146,7 +148,12 @@ jobs:
           token: ${{ env.GH_TOKEN }}
           tag: v${{ needs.version.outputs.new_version }}
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
-          artifacts: artifacts/**
+          artifacts: |
+            artifacts/**/Soulbound-*-portable.zip,
+            artifacts/**/dist/*.exe,
+            artifacts/**/dist/*.dmg,
+            artifacts/**/dist/*.AppImage,
+            artifacts/**/dist/latest*.yml
           draft: false
           prerelease: false
           generateReleaseNotes: true
