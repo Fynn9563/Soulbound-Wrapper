@@ -86,6 +86,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: v${{ needs.version.outputs.new_version }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
