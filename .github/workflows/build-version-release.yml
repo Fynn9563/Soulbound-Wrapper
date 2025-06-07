@@ -118,31 +118,22 @@ jobs:
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
           Write-Host "`n== Windows Compression Debug =="
-
-          # locate folder
           $folder = Get-ChildItem -Directory Soulbound-*-${{ matrix.script }}-x64 | Select-Object -First 1
-          Write-Host "Version: $v"
-          Write-Host "Folder to compress: $($folder.FullName)`n"
+          Write-Host "Folder to compress:"
+          Write-Host "  $($folder.FullName)`n"
 
-          # list contents
           Write-Host "Contents of folder:"
           Get-ChildItem $folder.FullName -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
 
-          # verify 7z availability
-          Write-Host "`nChecking 7z installation..."
-          if (Get-Command 7z -ErrorAction SilentlyContinue) {
-            Get-Command 7z | Format-List | Write-Host
-          } else {
-            Write-Host "ERROR: 7z not found in PATH"
-            exit 1
-          }
+          Push-Location $folder.FullName
+          Write-Host "`nCurrent directory:" (Get-Location)
 
-          # run compression with verbose flags
-          Write-Host "`nStarting compression..."
-          & 7z a -bb3 -bsp1 -bse1 -y "soulbound-$v-x64.${{ matrix.script }}.7z" "$($folder.FullName)\*" 2>&1 |
+          Write-Host "`nRunning 7z to compress everything under here:"
+          & 7z a -bb3 -bsp1 -bse1 -r "..\soulbound-$v-x64.${{ matrix.script }}.7z" "*" 2>&1 |
             ForEach-Object { Write-Host $_ }
 
           Write-Host "`nCompression finished with exit code $LASTEXITCODE"
+          Pop-Location
 
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
