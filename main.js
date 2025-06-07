@@ -11,11 +11,17 @@ let escHoldTimeout = null;
 let escDialogOpened = false;
 let escKeyDownTime = null;
 
-// Load blocked URLs from "blocked_urls.txt"
+// Load blocked URL patterns from "blocked_urls.txt"
 let blockedUrls = [];
 try {
-  const lines = fs.readFileSync(path.join(__dirname, 'blocked_urls.txt'), 'utf-8').split(/\r?\n/);
-  blockedUrls = lines.map(line => line.trim()).filter(line => line && !line.startsWith('#'));
+  const lines = fs.readFileSync(path.join(__dirname, 'blocked_urls.txt'), 'utf-8')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('#'));
+  // Replace specific cache_version values with wildcard
+  blockedUrls = lines.map(url =>
+    url.replace(/cache_version=[^&]+/, 'cache_version=*')
+  );
 } catch {
   console.warn('Could not load blocked_urls.txt; no URLs will be blocked.');
 }
@@ -63,7 +69,7 @@ function createWindow() {
   const webContents = win.webContents;
   const session = webContents.session;
 
-  // Block specific audio URLs if session.webRequest is available
+  // Block specific audio URL patterns
   if (session && session.webRequest && blockedUrls.length > 0) {
     session.webRequest.onBeforeRequest({ urls: blockedUrls }, (details, callback) => {
       console.log(`[BLOCKED] ${details.method} ${details.url}`);
