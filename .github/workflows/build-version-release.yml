@@ -150,11 +150,10 @@ jobs:
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: |
             artifacts/**/Soulbound-*-portable.zip,
-            artifacts/**/dist/*.exe,
-            artifacts/**/dist/*.dmg,
-            artifacts/**/dist/*.AppImage,
-            artifacts/**/dist/latest.yml,
-            artifacts/**/dist/latest*.yml
+            artifacts/**/dist/**/*.exe,
+            artifacts/**/dist/**/*.dmg,
+            artifacts/**/dist/**/*.AppImage,
+            artifacts/**/dist/**/*.yml
           draft: false
           prerelease: false
           generateReleaseNotes: true
