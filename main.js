@@ -1,12 +1,11 @@
 // main.js 
 const { app, BrowserWindow, Menu, ipcMain, globalShortcut, session } = require('electron');
-const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
+const { initAutoUpdater } = require('./update.js');
 
 let win;
 let exitWindow = null;
-let updateWindow = null;
 let quitMenu;
 let isQuitDialogOpen = false;
 let escHoldTimeout = null;
@@ -62,6 +61,7 @@ function createWindow() {
   });
 
   win.setAspectRatio(16 / 9);
+
   const wc = win.webContents;
   const ses = wc.session;
 
@@ -142,7 +142,6 @@ ipcMain.on('exit-dialog-selection', (e, action) => {
 
 ipcMain.on('update-now', () => autoUpdater.quitAndInstall());
 ipcMain.on('update-later', () => {
-  if (updateWindow) updateWindow.close();
 });
 
 function start() {
@@ -150,26 +149,7 @@ function start() {
     createWindow();
     globalShortcut.register('F11', () => win.setFullScreen(!win.isFullScreen()));
 
-    autoUpdater.setFeedURL({
-      provider: 'github',
-      owner: 'Fynn9563',
-      repo: 'Soulbound-Wrapper'
-    });
-    autoUpdater.on('update-available', () => {
-      updateWindow = new BrowserWindow({
-        width: 400,
-        height: 200,
-        webPreferences: { contextIsolation: false, nodeIntegration: true }
-      });
-      updateWindow.loadFile(path.join(__dirname, 'update.html'));
-    });
-    autoUpdater.on('download-progress', progress => {
-      updateWindow?.webContents.send('download-progress', progress);
-    });
-    autoUpdater.on('update-downloaded', () => {
-      updateWindow?.webContents.send('update-downloaded');
-    });
-    autoUpdater.checkForUpdatesAndNotify();
+    initAutoUpdater(win);
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
