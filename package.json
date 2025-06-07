@@ -1,8 +1,6 @@
 {
   "name": "soulbound",
-  "version": "1.0.14",
-  "description": "A native-like desktop wrapper for the Soulbound browser game",
-  "author": "Fynn9563",
+  "version": "1.0.15",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
