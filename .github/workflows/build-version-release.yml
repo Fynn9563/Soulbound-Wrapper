@@ -109,12 +109,11 @@ jobs:
         run: npm run dist:${{ matrix.script }}
         shell: bash
 
-      - name: Compress build (macOS/Linux) with verbose output
+      - name: Compress build (macOS/Linux)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           v=${{ needs.version.outputs.new_version }}
-          # Determine source directory
           if [ "$(uname)" = "Linux" ]; then
             src="dist/linux-unpacked"
           else
@@ -130,22 +129,22 @@ jobs:
           7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
           echo "Compression exit code: $?"
 
-      - name: Compress build (Windows) with verbose output
+      - name: Compress build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
           $src = 'dist\win-unpacked'
           Write-Host "== Compressing portable build =="
-          Write-Host "Version: $v"
-          Write-Host "Source directory: $src"
+          Write-Host ("Version: {0}" -f $v)
+          Write-Host ("Source directory: {0}" -f $src)
           Write-Host "Contents of $src:"
           Get-ChildItem $src -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
           Write-Host
           Write-Host "Running 7z with verbose flags..."
-          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src\*" 2>&1 |
+          & 7z a -bb3 -bsp1 -bse1 ("soulbound-{0}-x64.{1}.7z" -f $v, ${{ matrix.script }} ) "$src\*" 2>&1 |
             ForEach-Object { Write-Host $_ }
-          Write-Host "`nCompression exit code: $LASTEXITCODE"
+          Write-Host ("`nCompression exit code: {0}" -f $LASTEXITCODE)
 
       - name: List entire workspace (macOS/Linux)
         if: runner.os != 'Windows'
