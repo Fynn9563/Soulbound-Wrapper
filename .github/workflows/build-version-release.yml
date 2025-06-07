@@ -109,13 +109,13 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          zip -r Soulbound-${{ matrix.script }}-portable.zip Soulbound-*-${{ matrix.script }}-x64
+          zip -r Soulbound-${{ matrix.script }}-portable.zip Soulbound-*-x64
 
       - name: Zip portable build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $folder = Get-ChildItem -Directory Soulbound-*-${{ matrix.script }}-x64 | Select-Object -First 1
+          $folder = Get-ChildItem -Directory Soulbound-*-x64 | Select-Object -First 1
           Compress-Archive -Path "$($folder.FullName)\*" -DestinationPath "Soulbound-${{ matrix.script }}-portable.zip"
 
       - name: Build installer
