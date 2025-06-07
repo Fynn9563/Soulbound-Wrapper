@@ -122,59 +122,55 @@ jobs:
           echo "== Compressing portable build =="
           echo "Version: $v"
           echo "Source directory: $src"
-          echo "Contents of $src:"
+          echo "Listing contents of $src:"
           ls -R "$src"
           echo
-          echo "Running 7z with verbose flags..."
+          echo "Starting compression..."
           7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
-          echo "Compression exit code: $?"
+          echo "Exit code: $?"
 
-      - name: Compress build (Windows)
+      - name: Compress application (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
-          $src = "dist\win-unpacked"
-          Write-Host "== Compressing portable build =="
-          Write-Host ("Version: {0}" -f $v)
+          $src = 'dist\win-unpacked'
+          Write-Host "Version: $v"
           Write-Host ("Source directory: {0}" -f $src)
-          Write-Host ("Contents of {0}:" -f $src)
+          Write-Host "Listing contents of $src:"
           Get-ChildItem $src -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
           Write-Host
-          Write-Host "Running 7z with verbose flags..."
-          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src\*" 2>&1 |
+          Write-Host "Starting compression..."
+          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.win.7z" "$src\*" 2>&1 |
             ForEach-Object { Write-Host $_ }
-          Write-Host ("`nCompression exit code: {0}" -f $LASTEXITCODE)
+          Write-Host ("`nExit code: {0}" -f $LASTEXITCODE)
 
-      - name: List entire workspace (macOS/Linux)
-        if: runner.os != 'Windows'
-        shell: bash
+      - name: List workspace contents
+        shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
         run: |
-          echo "=== WORKSPACE ROOT ==="
-          ls -R .
-          echo "=== dist directory ==="
-          ls -lah dist
-
-      - name: List entire workspace (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "=== WORKSPACE ROOT ==="
-          Get-ChildItem -Recurse
-          Write-Host "=== dist directory ==="
-          Get-ChildItem dist -Recurse
+          echo "=== ROOT ==="
+          if [ "${RUNNER_OS}" != "Windows" ]; then
+            ls -R .
+            echo "=== dist ==="
+            ls -lah dist
+          else
+            Get-ChildItem -Recurse | Write-Host
+            Write-Host "=== dist ==="
+            Get-ChildItem dist -Recurse | Write-Host
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.script }}
+          name: release-${{ matrix.os }}
           path: |
             soulbound-${{ needs.version.outputs.new_version }}-x64.*.7z
+            # Windows installer and manifest
             dist/**/Soulbound-Setup-*.exe
-            dist/**/*.dmg
-            dist/**/*.AppImage
+            dist/nsis-web/soulbound-*-x64.nsis.7z
             dist/nsis-web/latest.yml
-            dist/latest*.yml
+            # macOS
+            soulbound-darwin-x64/Soulbound.app
 
   release:
     needs: [version, build]
@@ -194,10 +190,10 @@ jobs:
           artifacts: |
             artifacts/soulbound-*-x64.*.7z,
             artifacts/**/dist/**/Soulbound-Setup-*.exe,
-            artifacts/**/dist/**/*.dmg,
-            artifacts/**/dist/**/*.AppImage,
-            artifacts/**/dist/nsis-web/latest.yml,
-            artifacts/**/dist/latest*.yml
+            artifacts/nsis-web/soulbound-*-x64.nsis.7z,
+            artifacts/nsis-web/latest.yml,
+            artifacts/*.app,
+            artifacts/*.AppImage
           draft: false
           prerelease: false
           generateReleaseNotes: true
