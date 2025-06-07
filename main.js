@@ -4,11 +4,9 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
-Object.defineProperty(app, 'isPackaged', { get: () => true });
-autoUpdater.forceDevUpdateConfig = true;
-
 let win;
 let exitWindow = null;
+let updateWindow = null;
 let quitMenu;
 let isQuitDialogOpen = false;
 let escHoldTimeout = null;
@@ -67,7 +65,7 @@ function createWindow() {
   const wc = win.webContents;
   const ses = wc.session;
 
-  if (ses && ses.webRequest && blockedUrls.length) {
+  if (ses?.webRequest && blockedUrls.length) {
     ses.webRequest.onBeforeRequest({ urls: blockedUrls }, (details, cb) => cb({ cancel: true }));
   }
 
@@ -84,6 +82,7 @@ function createWindow() {
         else e.preventDefault();
         escKeyDownTime = null;
       }
+      return;
     }
     if (input.key === 'F12' && input.type === 'keyDown') {
       if (!wc.isDevToolsOpened()) wc.openDevTools({ mode: 'detach' });
@@ -98,6 +97,7 @@ function createWindow() {
     wc.setZoomFactor(1);
     wc.insertCSS('html, body, canvas, img { image-rendering: pixelated !important; }');
   });
+
   win.on('enter-full-screen', () => win.setMenuBarVisibility(false));
   win.on('leave-full-screen', () => win.setMenuBarVisibility(false));
 
@@ -140,23 +140,36 @@ ipcMain.on('exit-dialog-selection', (e, action) => {
   else if (action === 'quit') app.quit();
 });
 
-ipcMain.on('restart_app', () => autoUpdater.quitAndInstall());
+ipcMain.on('update-now', () => autoUpdater.quitAndInstall());
+ipcMain.on('update-later', () => {
+  if (updateWindow) updateWindow.close();
+});
 
 function start() {
   return app.whenReady().then(() => {
     createWindow();
     globalShortcut.register('F11', () => win.setFullScreen(!win.isFullScreen()));
 
-    try {
-      autoUpdater.setFeedURL({
-        provider: 'github',
-        owner: 'Fynn9563',
-        repo: 'Soulbound-Wrapper'
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'Fynn9563',
+      repo: 'Soulbound-Wrapper'
+    });
+    autoUpdater.on('update-available', () => {
+      updateWindow = new BrowserWindow({
+        width: 400,
+        height: 200,
+        webPreferences: { contextIsolation: false, nodeIntegration: true }
       });
-      autoUpdater.checkForUpdatesAndNotify();
-      autoUpdater.on('update-available', () => win.webContents.send('update_available'));
-      autoUpdater.on('update-downloaded', () => win.webContents.send('update_downloaded'));
-    } catch {}
+      updateWindow.loadFile(path.join(__dirname, 'update.html'));
+    });
+    autoUpdater.on('download-progress', progress => {
+      updateWindow?.webContents.send('download-progress', progress);
+    });
+    autoUpdater.on('update-downloaded', () => {
+      updateWindow?.webContents.send('update-downloaded');
+    });
+    autoUpdater.checkForUpdatesAndNotify();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
