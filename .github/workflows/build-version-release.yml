@@ -153,6 +153,7 @@ jobs:
             artifacts/**/dist/*.exe,
             artifacts/**/dist/*.dmg,
             artifacts/**/dist/*.AppImage,
+            artifacts/**/dist/latest.yml,
             artifacts/**/dist/latest*.yml
           draft: false
           prerelease: false
