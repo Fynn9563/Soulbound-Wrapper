@@ -112,35 +112,41 @@ jobs:
           v=${{ needs.version.outputs.new_version }}
           7z a soulbound-$v-x64.${{ matrix.script }}.7z "Soulbound-*-${{ matrix.script }}-x64/*" -r
 
-      - name: Compress portable build (Windows)
+      - name: Compress portable build (Windows) with debug
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
+          Write-Host "`n== Windows Compression Debug =="
+
+          # locate folder
           $folder = Get-ChildItem -Directory Soulbound-*-${{ matrix.script }}-x64 | Select-Object -First 1
-          & 7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$($folder.FullName)\*"
+          Write-Host "Version: $v"
+          Write-Host "Folder to compress: $($folder.FullName)`n"
+
+          # list contents
+          Write-Host "Contents of folder:"
+          Get-ChildItem $folder.FullName -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
+
+          # verify 7z availability
+          Write-Host "`nChecking 7z installation..."
+          if (Get-Command 7z -ErrorAction SilentlyContinue) {
+            Get-Command 7z | Format-List | Write-Host
+          } else {
+            Write-Host "ERROR: 7z not found in PATH"
+            exit 1
+          }
+
+          # run compression with verbose flags
+          Write-Host "`nStarting compression..."
+          & 7z a -bb3 -bsp1 -bse1 -y "soulbound-$v-x64.${{ matrix.script }}.7z" "$($folder.FullName)\*" 2>&1 |
+            ForEach-Object { Write-Host $_ }
+
+          Write-Host "`nCompression finished with exit code $LASTEXITCODE"
 
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
         shell: bash
-
-      - name: List entire workspace (macOS/Linux)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "=== WORKSPACE ROOT ==="
-          ls -R .
-          echo "=== dist directory ==="
-          ls -lah dist
-
-      - name: List entire workspace (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "=== WORKSPACE ROOT ==="
-          Get-ChildItem -Recurse
-          Write-Host "=== dist directory ==="
-          Get-ChildItem dist -Recurse
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
