@@ -105,35 +105,65 @@ jobs:
         run: npm run package:${{ matrix.script }}
         shell: bash
 
-      - name: Compress portable build (macOS/Linux)
+      - name: Compress portable build (macOS/Linux) with verbose output
         if: runner.os != 'Windows'
         shell: bash
         run: |
           v=${{ needs.version.outputs.new_version }}
-          # Electron Builder outputs a linux AppImage but also leaves an unpacked dir
-          # For Linux: dist/linux-unpacked
-          # For macOS: dist/mac (this contains Soulbound.app)
-          if [ "${RUNNER_OS}" = "Linux" ]; then
+          # Determine source directory
+          if [ "$(uname)" = "Linux" ]; then
             src="dist/linux-unpacked"
           else
             src="dist/mac"
           fi
-          echo "Compressing $src -> soulbound-$v-x64.${{ matrix.script }}.7z"
-          7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
+          echo "== Compressing portable build =="
+          echo "Version: $v"
+          echo "Source directory: $src"
+          echo "Contents of $src:"
+          ls -R "$src"
+          echo
+          echo "Running 7z with verbose flags..."
+          7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src/*" -r
+          echo "Compression exit code: $?"
 
-      - name: Compress portable build (Windows)
+      - name: Compress portable build (Windows) with verbose output
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
-          # Electron Builder leaves an unpacked app in dist/win-unpacked
-          $src = "dist\\win-unpacked"
-          Write-Host "Compressing $src -> soulbound-$v-x64.${{ matrix.script }}.7z"
-          & 7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$src\\*" -r
+          $src = 'dist\win-unpacked'
+          Write-Host "== Compressing portable build =="
+          Write-Host "Version: $v"
+          Write-Host "Source directory: $src"
+          Write-Host "Contents of $src:"
+          Get-ChildItem $src -Recurse | ForEach-Object { Write-Host " - $($_.FullName)" }
+          Write-Host
+          Write-Host "Running 7z with verbose flags..."
+          & 7z a -bb3 -bsp1 -bse1 "soulbound-$v-x64.${{ matrix.script }}.7z" "$src\*" 2>&1 |
+            ForEach-Object { Write-Host $_ }
+          Write-Host "`nCompression exit code: $LASTEXITCODE"
 
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
         shell: bash
+
+      - name: Debug: list entire workspace (macOS/Linux)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "=== WORKSPACE ROOT ==="
+          ls -R .
+          echo "=== dist directory ==="
+          ls -lah dist
+
+      - name: Debug: list entire workspace (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "=== WORKSPACE ROOT ==="
+          Get-ChildItem -Recurse
+          Write-Host "=== dist directory ==="
+          Get-ChildItem dist -Recurse
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
