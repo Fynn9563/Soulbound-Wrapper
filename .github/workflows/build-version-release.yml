@@ -124,6 +124,24 @@ jobs:
         run: npm run dist:${{ matrix.script }}
         shell: bash
 
+      - name: Debug: list entire workspace
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "=== ROOT ==="
+          ls -R .
+          echo "=== dist directory ==="
+          ls -lah dist
+
+      - name: Debug: list entire workspace (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "=== ROOT ==="
+          Get-ChildItem -Recurse
+          Write-Host "=== dist directory ==="
+          Get-ChildItem dist -Recurse
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
