@@ -131,6 +131,7 @@ jobs:
             dist/**/Soulbound-Setup-*.exe
             dist/*.dmg
             dist/*.AppImage
+            dist/nsis-web/latest.yml
             dist/latest*.yml
 
   release:
@@ -153,7 +154,8 @@ jobs:
             artifacts/**/dist/**/Soulbound-Setup-*.exe,
             artifacts/**/dist/*.dmg,
             artifacts/**/dist/*.AppImage,
-            artifacts/**/dist/latest*.yml
+            artifacts/**/dist/latest*.yml,
+            artifacts/**/dist/nsis-web/latest.yml
           draft: false
           prerelease: false
           generateReleaseNotes: true
