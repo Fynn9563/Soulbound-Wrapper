@@ -124,7 +124,7 @@ jobs:
         run: npm run dist:${{ matrix.script }}
         shell: bash
 
-      - name: Debug: list entire workspace (macOS/Linux)
+      - name: List entire workspace (macOS/Linux)
         if: runner.os != 'Windows'
         shell: bash
         run: |
@@ -133,7 +133,7 @@ jobs:
           echo "=== dist directory ==="
           ls -lah dist
 
-      - name: Debug: list entire workspace (Windows)
+      - name: List entire workspace (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
