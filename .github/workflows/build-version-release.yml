@@ -35,7 +35,7 @@ jobs:
 
       - id: bump
         run: |
-          npm version patch -m 'chore(release): %s [skip ci]'
+          npm version patch -m 'chore\(release\): %s [skip ci]'
           echo "new_version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
 
       - run: git push --follow-tags
