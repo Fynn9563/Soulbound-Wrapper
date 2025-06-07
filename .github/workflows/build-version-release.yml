@@ -117,18 +117,18 @@ jobs:
         shell: pwsh
         run: |
           $v = '${{ needs.version.outputs.new_version }}'
-          $folder = Get-ChildItem -Directory Soulbound-*-x64 | Select-Object -First 1
-          & 7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$($folder.FullName)\*" 
+          $folder = Get-ChildItem -Directory Soulbound-*-${{ matrix.script }}-x64 | Select-Object -First 1
+          & 7z a "soulbound-$v-x64.${{ matrix.script }}.7z" "$($folder.FullName)\*"
 
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
         shell: bash
 
-      - name: Debug: list entire workspace
+      - name: Debug: list entire workspace (macOS/Linux)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          echo "=== ROOT ==="
+          echo "=== WORKSPACE ROOT ==="
           ls -R .
           echo "=== dist directory ==="
           ls -lah dist
@@ -137,7 +137,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Write-Host "=== ROOT ==="
+          Write-Host "=== WORKSPACE ROOT ==="
           Get-ChildItem -Recurse
           Write-Host "=== dist directory ==="
           Get-ChildItem dist -Recurse
@@ -170,7 +170,7 @@ jobs:
           tag: v${{ needs.version.outputs.new_version }}
           name: "Soulbound v${{ needs.version.outputs.new_version }}"
           artifacts: |
-            artifacts/*.7z,
+            artifacts/soulbound-*-x64.*.7z,
             artifacts/**/dist/**/Soulbound-Setup-*.exe,
             artifacts/**/dist/**/*.dmg,
             artifacts/**/dist/**/*.AppImage,
