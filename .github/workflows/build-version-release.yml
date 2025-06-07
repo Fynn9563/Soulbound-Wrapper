@@ -131,7 +131,7 @@ jobs:
             dist/**/*.exe
             dist/**/*.dmg
             dist/**/*.AppImage
-            dist/latest*.yml
+            dist/**/*.yml
 
   release:
     needs: [version, build]
