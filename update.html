@@ -1,4 +1,3 @@
-<!-- update.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -81,21 +80,17 @@
 
   <script>
     const { ipcRenderer } = require('electron');
-
     const progressBar = document.getElementById('progress-bar');
     const status = document.getElementById('status');
     const nowBtn = document.getElementById('nowBtn');
     const laterBtn = document.getElementById('laterBtn');
 
-    // When download starts, enable Later button
-    ipcRenderer.on('download-progress', (_, progress) => {
-      const percent = Math.floor(progress.percent);
+    ipcRenderer.on('download-progress', (_, { percent }) => {
       progressBar.style.width = percent + '%';
       status.textContent = `Downloading… ${percent}%`;
       laterBtn.disabled = false;
     });
 
-    // When download completes, show action buttons
     ipcRenderer.on('update-downloaded', () => {
       status.textContent = 'Update ready!';
       nowBtn.disabled = false;
