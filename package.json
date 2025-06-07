@@ -10,9 +10,9 @@
     "package:win": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=win32 --arch=x64 --icon=icon.ico --overwrite",
     "package:mac": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=darwin --arch=x64 --icon=icon.icns --overwrite",
     "package:linux": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=linux --arch=x64 --icon=icon.png --overwrite",
-    "dist:win": "cross-env NODE_ENV=production electron-builder",
-    "dist:mac": "cross-env NODE_ENV=production electron-builder",
-    "dist:linux": "cross-env NODE_ENV=production electron-builder",
+    "dist:win": "cross-env NODE_ENV=production electron-builder --win",
+    "dist:mac": "cross-env NODE_ENV=production electron-builder --mac",
+    "dist:linux": "cross-env NODE_ENV=production electron-builder --linux",
     "test": "node tests/test.js"
   },
   "dependencies": {
