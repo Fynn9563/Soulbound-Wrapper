@@ -173,9 +173,8 @@ jobs:
             dist/nsis-web/latest.yml
             # macOS
             dist/**/*.dmg
-			# Linux
-			dist/**/*.AppImage
-			
+            # Linux
+            dist/**/*.AppImage
   release:
     needs: [version, build]
     runs-on: ubuntu-latest
