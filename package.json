@@ -1,16 +1,18 @@
 {
   "name": "soulbound",
   "version": "1.0.18",
+  "description": "A native-like desktop wrapper for the Soulbound pixel-art RPG",
+  "author": "Fynn9563",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "start:prod": "cross-env NODE_ENV=production electron .",
     "package:win": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=win32 --arch=x64 --icon=icon.ico --overwrite",
-    "package:mac": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=darwin --arch=x64 --icon=icon.ico --overwrite",
-    "package:linux": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=linux --arch=x64 --icon=icon.ico --overwrite",
-    "dist:win": "cross-env NODE_ENV=production electron-builder --windows nsis",
-    "dist:mac": "cross-env NODE_ENV=production electron-builder --mac dmg",
-    "dist:linux": "cross-env NODE_ENV=production electron-builder --linux AppImage",
+    "package:mac": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=darwin --arch=x64 --icon=icon.icns --overwrite",
+    "package:linux": "cross-env NODE_ENV=production electron-packager . Soulbound --platform=linux --arch=x64 --icon=icon.png --overwrite",
+    "dist:win": "cross-env NODE_ENV=production electron-builder",
+    "dist:mac": "cross-env NODE_ENV=production electron-builder",
+    "dist:linux": "cross-env NODE_ENV=production electron-builder",
     "test": "node tests/test.js"
   },
   "build": {
@@ -32,16 +34,14 @@
       "target": "dmg"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "category": "Game"
     }
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
     "electron": "^36.4.0",
-    "electron-builder": "^24.6.0",
+    "electron-builder": "^24.13.3",
     "electron-packager": "^16.0.0"
-  },
-  "dependencies": {
-    "electron-updater": "^6.6.2"
   }
 }

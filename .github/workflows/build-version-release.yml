@@ -31,30 +31,35 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        shell: bash
 
       - name: Run tests
         run: npm test --if-present
+        shell: bash
 
       - name: Configure Git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+        shell: bash
 
       - name: Bump version
         id: bump
         run: |
           npm version patch -m "chore(release): %s [skip ci]"
-          echo new_version=$(node -p "require('./package.json').version") >> $GITHUB_OUTPUT
+          echo "new_version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Show bumped version
-        run: |
-          echo "step-level bump.outputs.new_version = ${{ steps.bump.outputs.new_version }}"
+        run: echo "step-level bump.outputs.new_version = ${{ steps.bump.outputs.new_version }}"
+        shell: bash
 
       - name: Push commit and tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" --follow-tags
+        shell: bash
 
   build:
     needs: version
@@ -85,15 +90,19 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        shell: bash
 
       - name: Run tests
         run: npm test --if-present
+        shell: bash
 
       - name: Package portable build
         run: npm run package:${{ matrix.script }}
+        shell: bash
 
       - name: Build installer
         run: npm run dist:${{ matrix.script }}
+        shell: bash
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -108,7 +117,8 @@ jobs:
     needs: [version, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
