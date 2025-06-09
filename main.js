@@ -1,4 +1,4 @@
-// main.js 
+// main.js
 const { app, BrowserWindow, Menu, ipcMain, globalShortcut, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -66,7 +66,16 @@ function createWindow() {
   const ses = wc.session;
 
   if (ses?.webRequest && blockedUrls.length) {
-    ses.webRequest.onBeforeRequest({ urls: blockedUrls }, (details, cb) => cb({ cancel: true }));
+    const patterns = blockedUrls.map(u => {
+      const [base] = u.split('?');
+      return base + '*';
+    });
+
+    console.log('[URL BLOCK] blocking these patterns:', patterns);
+    ses.webRequest.onBeforeRequest({ urls: patterns }, (details, callback) => {
+      console.log(`[URL BLOCKED] ${details.method} ${details.url}`);
+      callback({ cancel: true });
+    });
   }
 
   wc.on('before-input-event', (e, input) => {
